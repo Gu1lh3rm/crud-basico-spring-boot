@@ -1,8 +1,16 @@
 package com.guilherme.cadastro.models;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Entity
 public class Usuario {
-    private String nome;
+
+    @Id
     private String cpfOuCnpj;
+
+    private String nome;
+
 
     public Usuario() {
 

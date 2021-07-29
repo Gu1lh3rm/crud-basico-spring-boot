@@ -1,6 +1,8 @@
 package com.guilherme.cadastro.controllers;
 
 import com.guilherme.cadastro.models.Usuario;
+import com.guilherme.cadastro.repositories.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -9,23 +11,29 @@ import java.util.*;
 @RequestMapping(path="/usuarios")
 public class UsuarioController {
 
-    private List<Usuario> usuarios = new ArrayList<>();
+
+    @Autowired
+    private UsuarioRepository repository;
 
     @PostMapping
-    public Usuario criaUsuario(@RequestBody Usuario usuario) {
-        usuarios.add(usuario);
+    public Usuario criaUsuario(@RequestBody Usuario usuario) throws Exception {
+        Optional<Usuario> usuarioOptional = repository.findById(usuario.getCpfOuCnpj());
 
-        return usuario;
+        if(usuarioOptional.isPresent()) {
+            throw new Exception("Usuário já cadastrado");
+        }
+        return repository.save(usuario);
+
     }
 
     @PutMapping
     public Usuario atualizaUsuario(@RequestBody Usuario usuarioUpdate) throws Exception {
+        Optional<Usuario> usuarioOptional = repository.findById(usuarioUpdate.getCpfOuCnpj());
 
-        for(Usuario usuario : usuarios) {
-            if(usuario.getCpfOuCnpj().equals(usuarioUpdate.getCpfOuCnpj())) {
-                usuario.setNome(usuarioUpdate.getNome());
-                return usuario;
-            }
+        if(usuarioOptional.isPresent()) {
+            Usuario usuario = usuarioOptional.get();
+            usuario.setNome(usuarioUpdate.getNome());
+            return repository.save(usuario);
         }
 
         throw new Exception("Usuário não encontrado");
@@ -33,27 +41,18 @@ public class UsuarioController {
 
     @GetMapping
     public List<Usuario> getUsuarios() {
-        return usuarios;
+        return repository.findAll();
     }
 
     @DeleteMapping("/{cpfOuCnpj}")
     public void deletaUsuarioPorCpfOuCnpj(@PathVariable("cpfOuCnpj") String cpfOuCnpj) throws Exception {
-        for(Usuario usuario : usuarios) {
-            if(usuario.getCpfOuCnpj().equals(cpfOuCnpj)) {
-                this.usuarios.remove(usuario);
-                return;
-            }
-        }
-        throw new Exception("Usuário não encontrado");
+        Usuario usuario = repository.findById(cpfOuCnpj).orElseThrow(() -> new Exception("Usuário não encontrado"));
+
+        repository.delete(usuario);
     }
 
     @GetMapping("/{cpfOuCnpj}")
     public Usuario buscaUsuarioPorCpfOuCnpj(@PathVariable("cpfOuCnpj") String cpfOuCnpj) throws Exception {
-        for(Usuario usuario : usuarios) {
-            if(usuario.getCpfOuCnpj().equals(cpfOuCnpj)) {
-                return usuario;
-            }
-        }
-        throw new Exception("Usuário não encontrado");
+        return repository.findById(cpfOuCnpj).orElseThrow(() -> new Exception("Usuário não encontrado"));
     }
 }
